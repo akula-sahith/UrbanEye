@@ -3,19 +3,24 @@ const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
 const geocodeLocation = async (place) => {
-  const token = process.env.MAPBOX_TOKEN;
+  const key = process.env.GOOGLE_MAPS_API_KEY;
 
   const res = await fetch(
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(place)}.json?access_token=${token}`
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(place)}&key=${key}`
   );
 
   const data = await res.json();
 
-  if (!data.features || data.features.length === 0) {
+  // ❌ handle errors
+  if (data.status !== "OK" || !data.results || data.results.length === 0) {
     throw new Error("Location not found");
   }
 
-  return data.features[0].center; // [lng, lat]
+  // ✅ extract lat/lng
+  const { lat, lng } = data.results[0].geometry.location;
+
+  // 🔥 return in your existing format [lng, lat]
+  return [lng, lat];
 };
 
 module.exports = { geocodeLocation };
