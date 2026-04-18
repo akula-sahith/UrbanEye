@@ -2,21 +2,39 @@
 const { Server } = require("socket.io");
 const { fetchPollutionGrid } = require("./utils/pollution");
 const { fetchWeatherGrid } = require("./utils/weather");
+const Event = require("./models/Event");
 
 function initSocket(server) {
   const io = new Server(server, {
     cors: { origin: "*" }
   });
 
-  io.on("connection", (socket) => {
+  io.on("connection", async (socket) => {
     console.log("Client connected");
 
-    // 🔥 send immediately on connect (good UX)
+    // 🔥 1. Send all existing events
+    try {
+      const events = await Event.find();
+      socket.emit("event:all", events);
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    }
+
+    // 🔥 2. Send initial pollution + weather
     sendAllData(socket);
 
-    // 🔁 periodic updates
-    const interval = setInterval(() => {
-      sendAllData(socket);
+    // 🔁 3. Periodic updates
+    const interval = setInterval(async () => {
+      await sendAllData(socket);
+
+      // 🔁 also sync events (optional)
+      try {
+        const events = await Event.find();
+        socket.emit("event:sync", events);
+      } catch (err) {
+        console.error("Event sync error:", err);
+      }
+
     }, 10000);
 
     socket.on("disconnect", () => {
@@ -27,7 +45,7 @@ function initSocket(server) {
   async function sendAllData(socket) {
     try {
       const [pollution, weather] = await Promise.all([
-        fetchPollutionGrid(16.5062, 80.6480),
+        fetchPollutionGrid(),
         fetchWeatherGrid(16.5062, 80.6480)
       ]);
 

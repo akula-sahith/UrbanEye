@@ -41,9 +41,9 @@ const registerEvent = async (req, res) => {
       status: moderation.status
     });
 
-    // 🔥 EMIT EVENT (IMPORTANT)
-    const io = req.app.get("io");
-    io.emit("event:new", event);
+    // // 🔥 EMIT EVENT (IMPORTANT)
+    // const io = req.app.get("io");
+    // io.emit("event:new", event);
 
     res.status(201).json({
       message: "Event created",

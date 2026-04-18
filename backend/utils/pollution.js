@@ -4,55 +4,26 @@ const fetch = (...args) =>
 
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 
-// 📍 Config
-const VIJAYAWADA_CENTER = {
+// 📍 Center
+const CENTER = {
   lat: 16.5062,
   lon: 80.6480
 };
 
-const LOCK_RADIUS_KM = 17;   // 🔥 coverage radius
-const STEP_KM = 3;           // 🔥 spacing between points (tune for performance)
-
-// 🧠 Constants
-const DEGREE_PER_KM = 1 / 111;
-
-// 🔁 Convert KM → degrees
-function kmToDegree(km) {
-  return km * DEGREE_PER_KM;
+// 🔥 6 strategic points (~3–5 km spread)
+function generateSixPoints(centerLat, centerLon, offset = 0.03) {
+  return [
+    [centerLat, centerLon], // center
+    [centerLat + offset, centerLon], // north
+    [centerLat - offset, centerLon], // south
+    [centerLat, centerLon + offset], // east
+    [centerLat, centerLon - offset], // west
+    [centerLat + offset, centerLon + offset], // northeast
+  ];
 }
 
-// 🌐 Generate grid inside circular radius
-function generateGridWithinRadius(centerLat, centerLon, radiusKm, stepKm) {
-  const radiusDeg = kmToDegree(radiusKm);
-  const stepDeg = kmToDegree(stepKm);
-
-  const points = [];
-
-  for (let lat = centerLat - radiusDeg; lat <= centerLat + radiusDeg; lat += stepDeg) {
-    for (let lon = centerLon - radiusDeg; lon <= centerLon + radiusDeg; lon += stepDeg) {
-
-      // 🧮 Check if point is inside circle
-      const dLat = lat - centerLat;
-      const dLon = lon - centerLon;
-      const distance = Math.sqrt(dLat * dLat + dLon * dLon);
-
-      if (distance <= radiusDeg) {
-        points.push([lat, lon]);
-      }
-    }
-  }
-
-  return points;
-}
-
-// 🌫️ Fetch pollution grid
 async function fetchPollutionGrid() {
-  const grid = generateGridWithinRadius(
-    VIJAYAWADA_CENTER.lat,
-    VIJAYAWADA_CENTER.lon,
-    LOCK_RADIUS_KM,
-    STEP_KM
-  );
+  const grid = generateSixPoints(CENTER.lat, CENTER.lon);
 
   console.log(`📡 Fetching pollution for ${grid.length} points`);
 
@@ -69,23 +40,12 @@ async function fetchPollutionGrid() {
         return {
           lat: gLat,
           lon: gLon,
-
-          // 🔥 AQI (1–5 scale)
           aqi: pollution?.main?.aqi || 0,
-
-          // 🔥 detailed pollutants
-          components: {
-            pm2_5: pollution?.components?.pm2_5 || 0,
-            pm10: pollution?.components?.pm10 || 0,
-            co: pollution?.components?.co || 0,
-            no2: pollution?.components?.no2 || 0,
-            o3: pollution?.components?.o3 || 0,
-            so2: pollution?.components?.so2 || 0
-          }
+          components: pollution?.components || {}
         };
 
       } catch (err) {
-        console.error("❌ Error fetching pollution:", err.message);
+        console.error("❌ Pollution fetch error:", err.message);
 
         return {
           lat: gLat,
