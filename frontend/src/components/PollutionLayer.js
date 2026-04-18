@@ -20,7 +20,7 @@ function getAQIColor(aqi) {
 }
 
 export function addPollutionLayer(map) {
-  const socket = io('http://localhost:5000');
+  const socket = io('http://13.53.182.223');
 
   socket.on('connect', () => {
     console.log('Connected to backend socket');
