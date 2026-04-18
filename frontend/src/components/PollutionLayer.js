@@ -35,6 +35,54 @@ export function addPollutionLayer(map) {
     closeOnClick: false
   });
 
+  let pollutionVisible = true;
+
+  // Create AQI card element
+  const aqiCard = document.createElement('div');
+  aqiCard.id = 'aqi-card';
+  aqiCard.style.position = 'absolute';
+  aqiCard.style.top = '20px';
+  aqiCard.style.left = '20px';
+  aqiCard.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+  aqiCard.style.padding = '15px 20px';
+  aqiCard.style.borderRadius = '8px';
+  aqiCard.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+  aqiCard.style.zIndex = '1000';
+  aqiCard.style.fontFamily = 'Arial, sans-serif';
+  aqiCard.style.minWidth = '150px';
+  
+  // Create AQI text container
+  const aqiText = document.createElement('div');
+  aqiText.id = 'aqi-text';
+  aqiCard.appendChild(aqiText);
+  
+  const mapContainer = document.querySelector('.map-container');
+  if (mapContainer) {
+    mapContainer.style.position = 'relative';
+    mapContainer.appendChild(aqiCard);
+  }
+
+  // Create toggle button
+  const toggleButton = document.createElement('button');
+  toggleButton.id = 'pollution-toggle';
+  toggleButton.style.marginTop = '10px';
+  toggleButton.style.padding = '5px 10px';
+  toggleButton.style.background = '#007bff';
+  toggleButton.style.color = 'white';
+  toggleButton.style.border = 'none';
+  toggleButton.style.borderRadius = '4px';
+  toggleButton.style.cursor = 'pointer';
+  toggleButton.textContent = 'Pollution: ON';
+  aqiCard.appendChild(toggleButton);
+
+  // Toggle button event listener
+  toggleButton.addEventListener('click', () => {
+    pollutionVisible = !pollutionVisible;
+    togglePollutionLayers(map, pollutionVisible);
+    toggleButton.textContent = pollutionVisible ? 'Pollution: ON' : 'Pollution: OFF';
+    toggleButton.style.background = pollutionVisible ? '#007bff' : '#6c757d';
+  });
+
   let pollutionSource = null;
 
   socket.on('pollution:update', (data) => {
@@ -44,6 +92,19 @@ export function addPollutionLayer(map) {
       console.log('No pollution data');
       return;
     }
+
+    // Calculate average AQI
+    const averageAQI = Math.round(
+      data.reduce((sum, point) => sum + point.aqi, 0) / data.length
+    );
+    
+    // Update AQI card
+    aqiText.innerHTML = `
+      <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Average AQI</div>
+      <div style="font-size: 28px; font-weight: bold; color: ${getAQIColor(averageAQI)};">
+        ${averageAQI}
+      </div>
+    `;
 
     const features = data.map(point => {
       const color = getAQIColor(point.aqi);
@@ -166,6 +227,15 @@ export function addPollutionLayer(map) {
     popup.remove();
     map.getCanvas().style.cursor = '';
   });
+
+  function togglePollutionLayers(map, visible) {
+    const layers = ['pollution-fade-3', 'pollution-fade-2', 'pollution-circles'];
+    layers.forEach(layerId => {
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+      }
+    });
+  }
 
   return socket;
 }
