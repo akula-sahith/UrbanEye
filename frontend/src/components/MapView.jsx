@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapView.css';
 import { addTrafficLayer } from './TrafficLayer.js';
+import { addPollutionLayer } from './PollutionLayer.js';
 
 const VIJAYAWADA_CENTER = [80.6480, 16.5062];
 const LOCK_RADIUS_METERS = 17000;
@@ -132,6 +133,7 @@ function MapView() {
       });
 
       addTrafficLayer(map.current);
+      addPollutionLayer(map.current);
     });
   }, []);
 
