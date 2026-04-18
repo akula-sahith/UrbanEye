@@ -11,7 +11,7 @@ const CENTER = {
 };
 
 // 🔥 6 strategic points (~3–5 km spread)
-function generateSixPoints(centerLat, centerLon, offset = 13) {
+function generateSixPoints(centerLat, centerLon, offset = 0.1) {
   return [
     [centerLat, centerLon], // center
     [centerLat + offset, centerLon], // north
