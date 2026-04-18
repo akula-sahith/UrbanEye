@@ -1,37 +1,49 @@
-// components/SocketDebugger.jsx
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
 export default function SocketDebugger() {
-  const [logs, setLogs] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [pollution, setPollution] = useState([]);
+  const [weather, setWeather] = useState([]);
 
   useEffect(() => {
     const socket = io("http://13.53.182.223");
 
-    // ✅ connection
     socket.on("connect", () => {
       console.log("✅ Connected:", socket.id);
-      addLog("connect", { id: socket.id });
     });
 
-    // ❌ error
     socket.on("connect_error", (err) => {
       console.error("❌ Connection Error:", err.message);
-      addLog("error", err.message);
     });
 
-    // 🔥 catch ALL events
-    socket.onAny((event, ...args) => {
-      console.log("📡 Event:", event, args);
-      addLog(event, args);
+    // 📍 EVENTS
+    socket.on("event:all", (data) => {
+      console.log("📍 All Events:", data);
+      setEvents(data);
     });
 
-    function addLog(event, data) {
-      setLogs((prev) => [
-        { event, data, time: new Date().toLocaleTimeString() },
-        ...prev.slice(0, 20) // keep last 20 logs
-      ]);
-    }
+    socket.on("event:new", (event) => {
+      console.log("📍 New Event:", event);
+      setEvents((prev) => [event, ...prev]);
+    });
+
+    socket.on("event:sync", (data) => {
+      console.log("📍 Synced Events:", data);
+      setEvents(data);
+    });
+
+    // 🌫️ POLLUTION
+    socket.on("pollution:update", (data) => {
+      console.log("🌫️ Pollution:", data);
+      setPollution(data);
+    });
+
+    // 🌤️ WEATHER
+    socket.on("weather:update", (data) => {
+      console.log("🌤️ Weather:", data);
+      setWeather(data);
+    });
 
     return () => {
       socket.disconnect();
@@ -40,16 +52,38 @@ export default function SocketDebugger() {
 
   return (
     <div style={{ padding: "10px", fontFamily: "monospace" }}>
-      <h3>📡 Socket Debugger</h3>
+      <h2>📡 Socket Debugger</h2>
 
-      {logs.map((log, index) => (
-        <div key={index} style={{ marginBottom: "10px" }}>
-          <strong>{log.time} - {log.event}</strong>
-          <pre style={{ background: "#111", color: "#0f0", padding: "5px" }}>
-            {JSON.stringify(log.data, null, 2)}
-          </pre>
-        </div>
-      ))}
+      {/* 📍 EVENTS */}
+      <section>
+        <h3>📍 Events ({events.length})</h3>
+        {events.map((e, i) => (
+          <div key={i} style={{ marginBottom: "10px" }}>
+            <strong>{e.name}</strong>
+            <div>{e.location_name}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* 🌫️ POLLUTION */}
+      <section>
+        <h3>🌫️ Pollution ({pollution.length})</h3>
+        {pollution.map((p, i) => (
+          <div key={i}>
+            AQI: {p.aqi} | PM2.5: {p.components?.pm2_5}
+          </div>
+        ))}
+      </section>
+
+      {/* 🌤️ WEATHER */}
+      <section>
+        <h3>🌤️ Weather ({weather.length})</h3>
+        {weather.map((w, i) => (
+          <div key={i}>
+            {w.condition?.main} | Temp: {w.main?.temp}°C | Humidity: {w.main?.humidity}%
+          </div>
+        ))}
+      </section>
     </div>
   );
 }
