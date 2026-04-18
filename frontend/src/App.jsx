@@ -5,7 +5,7 @@ import SocketTest from "./components/socketTest";
 function App() {
   return (
     <>
-    <SocketTest/>
+    {/* <SocketTest/> */}
     <Router>
       <Routes>
         {/* 🔥 Map page */}
