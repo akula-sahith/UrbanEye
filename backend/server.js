@@ -1,14 +1,29 @@
+// app.js
+require("dotenv").config();
 const express = require("express");
+const mongoose = require("mongoose");
+const http = require("http");
+
+const eventRoutes = require("./routes/eventRoutes");
+const initSocket = require("./socket");
 
 const app = express();
-const PORT = 5000;
+const server = http.createServer(app);
 
-// Basic route
-app.get("/", (req, res) => {
-res.send("Hello World 🚀");
-});
+// 🔥 initialize socket
+const io = initSocket(server);
 
-// Start server
-app.listen(PORT, () => {
-console.log(`Server running on http://localhost:${PORT}`);
+app.use(express.json());
+
+// routes
+app.use("/api/events", eventRoutes);
+
+// DB connect
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.error(err));
+
+// ✅ IMPORTANT: use server.listen (not app.listen)
+server.listen(5000, () => {
+  console.log("Server + Socket running on port 5000 🚀");
 });
