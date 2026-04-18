@@ -15,10 +15,8 @@ const registerEvent = async (req, res) => {
       end_at
     } = req.body;
 
-    // 1️⃣ Geocode
     const [lng, lat] = await geocodeLocation(location_name);
 
-    // 2️⃣ Moderate
     const moderation = await moderateEvent({ name, description });
 
     if (moderation.status === "rejected") {
@@ -28,7 +26,6 @@ const registerEvent = async (req, res) => {
       });
     }
 
-    // 3️⃣ Save
     const event = await Event.create({
       name,
       description,
@@ -43,6 +40,10 @@ const registerEvent = async (req, res) => {
       end_at,
       status: moderation.status
     });
+
+    // 🔥 EMIT EVENT (IMPORTANT)
+    const io = req.app.get("io");
+    io.emit("event:new", event);
 
     res.status(201).json({
       message: "Event created",
