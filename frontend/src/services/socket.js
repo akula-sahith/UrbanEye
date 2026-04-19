@@ -1,7 +1,7 @@
 // services/socket.js
 import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+const SOCKET_URL = import.meta.env.VITE_BACKEND_URL || "https://urbaneye-jepe.onrender.com";
 
 const socket = io(SOCKET_URL, {
   autoConnect: true

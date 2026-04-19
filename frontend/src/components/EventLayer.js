@@ -30,16 +30,10 @@ function createPinElement() {
   return wrapper;
 }
 
-export function addEventLayer(map) {
-  const socket = io('https://urbaneye-jepe.onrender.com');
-
-  socket.on('connect',    () => console.log('✅ Event layer connected'));
-  socket.on('disconnect', () => console.log('Event layer disconnected'));
-
+export function addEventLayer(map, events) {
   const markers = [];
   let eventsVisible = true;
 
-  /* ── Sidebar toggle listener ───────────────────────── */
   window.addEventListener('citymap:toggle', (e) => {
     if (e.detail.layer !== 'events') return;
     eventsVisible = e.detail.visible;
@@ -49,16 +43,10 @@ export function addEventLayer(map) {
     });
   });
 
-  /* ── Event marker handler ────────────────────────── */
-  socket.on('event:all',  (events) => updateEventMarkers(events));
-  socket.on('event:sync', (events) => updateEventMarkers(events));
-
   function updateEventMarkers(events) {
-    // Clear existing markers
     markers.forEach((m) => m.remove());
     markers.length = 0;
 
-    // Group events by coordinate to detect stacking
     const coordMap = {};
     events.forEach((event) => {
       const key = event.location.coordinates.join(',');
@@ -67,23 +55,20 @@ export function addEventLayer(map) {
     });
 
     events.forEach((event) => {
-      const key = event.location.coordinates.join(',');
-      const group = coordMap[key];
-      const indexInGroup = group.indexOf(event);
-
       let [lng, lat] = event.location.coordinates;
 
-      // Offset overlapping markers slightly so all are visible
+      const key = event.location.coordinates.join(',');
+      const group = coordMap[key];
+      const index = group.indexOf(event);
+
       if (group.length > 1) {
-        const angle  = (indexInGroup / group.length) * 2 * Math.PI;
+        const angle = (index / group.length) * 2 * Math.PI;
         const offset = 0.0003;
         lng += Math.cos(angle) * offset;
         lat += Math.sin(angle) * offset;
       }
 
       const el = createPinElement();
-
-      // Respect current visibility when placing new markers
       if (!eventsVisible) el.style.display = 'none';
 
       const marker = new mapboxgl.Marker(el, { anchor: 'bottom' })
@@ -91,34 +76,9 @@ export function addEventLayer(map) {
         .addTo(map);
 
       markers.push(marker);
-
-      const popup = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 40
-      });
-
-      el.addEventListener('mouseenter', () => {
-        popup
-          .setLngLat([lng, lat])
-          .setHTML(`
-            <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;line-height:1.6;">
-              <strong style="font-size:13px;">${event.name}</strong><br>
-              <strong>Description:</strong> ${event.description  || 'N/A'}<br>
-              <strong>Category:</strong>    ${event.category     || 'N/A'}<br>
-              <strong>Organiser:</strong>   ${event.organiser    || 'N/A'}<br>
-              <strong>Location:</strong>    ${event.location_name || 'N/A'}<br>
-              <strong>Start:</strong>  ${event.start_at ? new Date(event.start_at).toLocaleString() : 'N/A'}<br>
-              <strong>End:</strong>    ${event.end_at   ? new Date(event.end_at).toLocaleString()   : 'N/A'}<br>
-              <strong>Status:</strong> ${event.status}
-            </div>
-          `)
-          .addTo(map);
-      });
-
-      el.addEventListener('mouseleave', () => popup.remove());
     });
   }
 
-  return socket;
+  // 🔥 THIS WAS MISSING
+  updateEventMarkers(events);
 }
