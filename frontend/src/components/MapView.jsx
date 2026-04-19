@@ -287,13 +287,13 @@ function MapView() {
 
   /* Socket connections */
   useEffect(() => {
-    const sock = io('http://13.53.182.223');
+    const sock = io('https://urbaneye-jepe.onrender.com');
     sock.on('connect',    () => setConnected(true));
     sock.on('disconnect', () => setConnected(false));
     sock.on('weather:update',   (data) => setWeather(calculateAverageWeatherData(data)));
     sock.on('pollution:update', (data) => setPollution(buildPollutionValues(data)));
 
-    const evtSock = io('http://localhost:5000');
+    const evtSock = io('https://urbaneye-jepe.onrender.com');
     evtSock.on('event:all',  (evts) => setEvents(evts || []));
     evtSock.on('event:sync', (evts) => setEvents(evts || []));
 

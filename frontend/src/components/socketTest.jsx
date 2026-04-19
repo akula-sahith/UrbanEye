@@ -6,7 +6,7 @@ export default function SocketDebugger() {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    const socket = io("http://localhost:5000");
+    const socket = io("https://urbaneye-jepe.onrender.com");
 
     // ✅ connection
     socket.on("connect", () => {
