@@ -29,7 +29,7 @@ function safeParse(text) {
 async function fetchAllEvents() {
   try {
     const events = await Event.find({
-      status: "pending" // Only approved events
+      status: "pending" // Only pending events
     }).sort({ start_at: 1 });
 
     return events;

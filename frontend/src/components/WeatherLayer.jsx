@@ -202,18 +202,70 @@ function WeatherLayer() {
 
   useEffect(() => {
     // Weather + Pollution socket
-    const sock = io('https://urbaneye-jepe.onrender.com');
-    sock.on('connect',    () => setConnected(true));
-    sock.on('disconnect', () => setConnected(false));
-    sock.on('weather:update',   (data) => setWeather(calculateAverageWeatherData(data)));
-    sock.on('pollution:update', (data) => setPollution(buildPollutionValues(data)));
+    const sock = io('https://urbaneye-jepe.onrender.com', {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5
+    });
+
+    sock.on('connect', () => {
+      console.log('✅ Dashboard socket connected');
+      setConnected(true);
+    });
+    
+    sock.on('disconnect', () => {
+      console.log('❌ Dashboard socket disconnected');
+      setConnected(false);
+    });
+
+    sock.on('weather:update', (data) => {
+      console.log('📊 weather:update received:', data);
+      const averaged = calculateAverageWeatherData(data);
+      console.log('📊 averaged weather:', averaged);
+      setWeather(averaged);
+    });
+
+    sock.on('pollution:update', (data) => {
+      console.log('💨 pollution:update received:', data);
+      const averaged = buildPollutionValues(data);
+      console.log('💨 averaged pollution:', averaged);
+      setPollution(averaged);
+    });
+
+    sock.on('connect_error', (error) => {
+      console.error('❌ Socket connection error:', error);
+    });
 
     // Events socket — count only
-    const evtSock = io('https://urbaneye-jepe.onrender.com');
-    evtSock.on('event:all',  (evts) => setEventCount(evts.length));
-    evtSock.on('event:sync', (evts) => setEventCount(evts.length));
+    const evtSock = io('https://urbaneye-jepe.onrender.com', {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5
+    });
+    
+    evtSock.on('event:all',  (evts) => {
+      console.log('📍 events received:', evts.length);
+      setEventCount(evts.length);
+    });
+    evtSock.on('event:sync', (evts) => {
+      console.log('📍 event:sync received:', evts.length);
+      setEventCount(evts.length);
+    });
 
-    return () => { sock.disconnect(); evtSock.disconnect(); };
+    return () => { 
+      sock.off('connect');
+      sock.off('disconnect');
+      sock.off('weather:update');
+      sock.off('pollution:update');
+      sock.off('connect_error');
+      sock.disconnect(); 
+      
+      evtSock.off('event:all');
+      evtSock.off('event:sync');
+      evtSock.disconnect(); 
+    };
   }, []);
 
   /* Derived */

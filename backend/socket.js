@@ -35,7 +35,7 @@ function initSocket(server) {
         console.error("Event sync error:", err);
       }
 
-    }, 10000);
+    }, 200000);
 
     socket.on("disconnect", () => {
       clearInterval(interval);

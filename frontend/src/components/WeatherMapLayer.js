@@ -51,8 +51,13 @@ function createWeatherPinElement(temp, conditionMain) {
 export function addWeatherMapLayer(map) {
   const socket = io('https://urbaneye-jepe.onrender.com');
 
-  socket.on('connect',    () => console.log('✅ Weather layer connected'));
-  socket.on('disconnect', () => console.log('Weather layer disconnected'));
+  socket.on('connect', () => {
+    console.log('✅ [WeatherMapLayer] Weather layer connected');
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('❌ [WeatherMapLayer] Weather layer disconnected');
+  });
 
   const markers = [];
   let weatherVisible = true;
@@ -68,12 +73,21 @@ export function addWeatherMapLayer(map) {
   });
 
   /* ── Weather marker handler ────────────────────────── */
-  socket.on('weather:update', (data) => updateWeatherMarkers(data));
+  socket.on('weather:update', (data) => {
+    console.log('📍 [WeatherMapLayer] weather:update event received:', data);
+    updateWeatherMarkers(data);
+  });
 
   function updateWeatherMarkers(data) {
-    if (!Array.isArray(data) || data.length === 0) return;
+    console.log('📊 [WeatherMapLayer] Processing weather data, array length:', Array.isArray(data) ? data.length : 'not an array');
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn('⚠️ [WeatherMapLayer] No data or not an array');
+      return;
+    }
 
     // Clear existing markers
+    console.log('📊 [WeatherMapLayer] Removing', markers.length, 'old markers');
     markers.forEach((m) => m.remove());
     markers.length = 0;
 
@@ -84,6 +98,8 @@ export function addWeatherMapLayer(map) {
       if (!coordMap[key]) coordMap[key] = [];
       coordMap[key].push(point);
     });
+
+    console.log('📊 [WeatherMapLayer] Creating', data.length, 'weather markers from', Object.keys(coordMap).length, 'unique coordinates');
 
     data.forEach((point) => {
       const key = [point.lon, point.lat].join(',');
@@ -150,6 +166,8 @@ export function addWeatherMapLayer(map) {
         popup.remove();
       });
     });
+    
+    console.log('✅ [WeatherMapLayer] Finished creating', markers.length, 'weather markers');
   }
 
   return socket;

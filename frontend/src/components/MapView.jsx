@@ -7,7 +7,7 @@ import { addTrafficLayer } from './TrafficLayer.js';
 import { addPollutionLayer } from './PollutionLayer.js';
 import { addEventLayer } from './EventLayer.js';
 import { addWeatherMapLayer } from './WeatherMapLayer.js';
-
+import WeatherLayer from './WeatherLayer.jsx';
 /* ─── Constants ─────────────────────────────────────── */
 
 const VIJAYAWADA_CENTER = [80.6480, 16.5062];
@@ -288,14 +288,42 @@ function MapView() {
   /* Socket connections */
   useEffect(() => {
     const sock = io('https://urbaneye-jepe.onrender.com');
-    sock.on('connect',    () => setConnected(true));
-    sock.on('disconnect', () => setConnected(false));
-    sock.on('weather:update',   (data) => setWeather(calculateAverageWeatherData(data)));
-    sock.on('pollution:update', (data) => setPollution(buildPollutionValues(data)));
+    
+    sock.on('connect', () => {
+      console.log('🗺️ [MapView] Socket connected');
+      setConnected(true);
+    });
+    
+    sock.on('disconnect', () => {
+      console.log('🗺️ [MapView] Socket disconnected');
+      setConnected(false);
+    });
+    
+    sock.on('weather:update', (data) => {
+      console.log('🗺️ [MapView] weather:update received:', data);
+      const avg = calculateAverageWeatherData(data);
+      console.log('🗺️ [MapView] weather averaged:', avg);
+      setWeather(avg);
+    });
+    
+    sock.on('pollution:update', (data) => {
+      console.log('🗺️ [MapView] pollution:update received:', data);
+      const avg = buildPollutionValues(data);
+      console.log('🗺️ [MapView] pollution averaged:', avg);
+      setPollution(avg);
+    });
 
-    const evtSock = io('https://urbaneye-jepe.onrender.com');
-    evtSock.on('event:all',  (evts) => setEvents(evts || []));
-    evtSock.on('event:sync', (evts) => setEvents(evts || []));
+    const evtSock = io('http://urbaneye-jepe.onrender.com');
+    
+    evtSock.on('event:all', (evts) => {
+      console.log('🗺️ [MapView] event:all received, count:', evts?.length);
+      setEvents(evts || []);
+    });
+    
+    evtSock.on('event:sync', (evts) => {
+      console.log('🗺️ [MapView] event:sync received, count:', evts?.length);
+      setEvents(evts || []);
+    });
 
     return () => { sock.disconnect(); evtSock.disconnect(); };
   }, []);
