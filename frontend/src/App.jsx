@@ -3,6 +3,8 @@ import MapView from "./components/MapView";
 import SocketTest from "./components/socketTest";
 import Register from "./components/register";
 import LandingPage from "./components/LandingPage";
+import Dashboard from "./components/Dashboard";
+import Assistant from "./components/Assistant";
 import './App.css';
 function App() {
   return (
@@ -10,8 +12,10 @@ function App() {
     {/* <SocketTest/> */}
     <Router>
       <Routes>
-        {/* 🔥 Map page */}
+        {/* 🔥 Main Application Pages */}
         <Route path="/map" element={<MapView />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/assistant" element={<Assistant />} />
         <Route path="/register" element={<Register />} />
 
         {/* 🔧 Optional debug page */}

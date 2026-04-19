@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const http = require("http");
 const cors = require("cors");
 const eventRoutes = require("./routes/eventRoutes");
+const geminiRoutes = require("./routes/geminiRoutes");
 const initSocket = require("./socket");
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(express.json());
 
 // routes
 app.use("/api/events", eventRoutes);
+app.use("/api/gemini", geminiRoutes);
 
 // DB connect
 mongoose.connect(process.env.MONGODB_URI)

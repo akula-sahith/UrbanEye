@@ -2,16 +2,16 @@ import { io } from 'socket.io-client';
 import mapboxgl from 'mapbox-gl';
 
 const AQI_COLORS = {
-  0: '#00e400',   // Good
-  50: '#ffff00',  // Moderate
-  100: '#ff7e00', // Unhealthy for sensitive
-  150: '#ff0000', // Unhealthy
-  200: '#8f3f97', // Very unhealthy
-  300: '#7e0023'  // Hazardous
+  0:   '#00e400',
+  50:  '#ffff00',
+  100: '#ff7e00',
+  150: '#ff0000',
+  200: '#8f3f97',
+  300: '#7e0023'
 };
 
 function getAQIColor(aqi) {
-  if (aqi <= 50) return AQI_COLORS[0];
+  if (aqi <= 50)  return AQI_COLORS[0];
   if (aqi <= 100) return AQI_COLORS[50];
   if (aqi <= 150) return AQI_COLORS[100];
   if (aqi <= 200) return AQI_COLORS[150];
@@ -20,95 +20,30 @@ function getAQIColor(aqi) {
 }
 
 export function addPollutionLayer(map) {
-  const socket = io('http://13.53.182.223');
+  const socket = io('https://urbaneye-jepe.onrender.com');
 
-  socket.on('connect', () => {
-    console.log('Connected to backend socket');
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Disconnected from backend socket');
-  });
+  socket.on('connect',    () => console.log('✅ Pollution layer connected'));
+  socket.on('disconnect', () => console.log('Pollution layer disconnected'));
 
   const popup = new mapboxgl.Popup({
     closeButton: false,
     closeOnClick: false
   });
 
-  let pollutionVisible = true;
+  let pollutionSourceAdded = false;
 
-  // Create AQI card element
-  const aqiCard = document.createElement('div');
-  aqiCard.id = 'aqi-card';
-  aqiCard.style.position = 'absolute';
-  aqiCard.style.top = '20px';
-  aqiCard.style.left = '20px';
-  aqiCard.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-  aqiCard.style.padding = '15px 20px';
-  aqiCard.style.borderRadius = '8px';
-  aqiCard.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
-  aqiCard.style.zIndex = '1000';
-  aqiCard.style.fontFamily = 'Arial, sans-serif';
-  aqiCard.style.minWidth = '150px';
-  
-  // Create AQI text container
-  const aqiText = document.createElement('div');
-  aqiText.id = 'aqi-text';
-  aqiCard.appendChild(aqiText);
-  
-  const mapContainer = document.querySelector('.map-container');
-  if (mapContainer) {
-    mapContainer.style.position = 'relative';
-    mapContainer.appendChild(aqiCard);
-  }
-
-  // Create toggle button
-  const toggleButton = document.createElement('button');
-  toggleButton.id = 'pollution-toggle';
-  toggleButton.style.marginTop = '10px';
-  toggleButton.style.padding = '5px 10px';
-  toggleButton.style.background = '#007bff';
-  toggleButton.style.color = 'white';
-  toggleButton.style.border = 'none';
-  toggleButton.style.borderRadius = '4px';
-  toggleButton.style.cursor = 'pointer';
-  toggleButton.textContent = 'Pollution: ON';
-  aqiCard.appendChild(toggleButton);
-
-  // Toggle button event listener
-  toggleButton.addEventListener('click', () => {
-    pollutionVisible = !pollutionVisible;
-    togglePollutionLayers(map, pollutionVisible);
-    toggleButton.textContent = pollutionVisible ? 'Pollution: ON' : 'Pollution: OFF';
-    toggleButton.style.background = pollutionVisible ? '#007bff' : '#6c757d';
+  /* ── Sidebar toggle listener ───────────────────────── */
+  window.addEventListener('citymap:toggle', (e) => {
+    if (e.detail.layer !== 'pollution') return;
+    togglePollutionLayers(map, e.detail.visible);
   });
 
-  let pollutionSource = null;
-
+  /* ── Pollution data handler ──────────────────────── */
   socket.on('pollution:update', (data) => {
-    console.log('Pollution data received:', data);
+    if (!data || data.length === 0) return;
 
-    if (!data || data.length === 0) {
-      console.log('No pollution data');
-      return;
-    }
-
-    // Calculate average AQI
-    const averageAQI = Math.round(
-      data.reduce((sum, point) => sum + point.aqi, 0) / data.length
-    );
-    
-    // Update AQI card
-    aqiText.innerHTML = `
-      <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Average AQI</div>
-      <div style="font-size: 28px; font-weight: bold; color: ${getAQIColor(averageAQI)};">
-        ${averageAQI}
-      </div>
-    `;
-
-    const features = data.map(point => {
+    const features = data.map((point) => {
       const color = getAQIColor(point.aqi);
-      console.log(`Point: lat=${point.lat}, lon=${point.lon}, aqi=${point.aqi}, color=${color}`);
       return {
         type: 'Feature',
         geometry: {
@@ -116,123 +51,110 @@ export function addPollutionLayer(map) {
           coordinates: [point.lon, point.lat]
         },
         properties: {
-          aqi: point.aqi,
-          co: point.components.co,
-          no2: point.components.no2,
-          o3: point.components.o3,
+          aqi:   point.aqi,
+          co:    point.components.co,
+          no2:   point.components.no2,
+          o3:    point.components.o3,
           pm2_5: point.components.pm2_5,
-          pm10: point.components.pm10,
-          so2: point.components.so2,
-          color: color
+          pm10:  point.components.pm10,
+          so2:   point.components.so2,
+          color
         }
       };
     });
 
-    console.log('Features created:', features.length);
+    const geojson = { type: 'FeatureCollection', features };
 
-    const geojson = {
-      type: 'FeatureCollection',
-      features: features
-    };
+    if (!pollutionSourceAdded) {
+      map.addSource('pollution', { type: 'geojson', data: geojson });
 
-    if (pollutionSource) {
-      map.getSource('pollution').setData(geojson);
-    } else {
-      map.addSource('pollution', {
-        type: 'geojson',
-        data: geojson
-      });
-
-      // Layer 1: Outer fade (30km radius with very low opacity)
+      // Outer fade — wide halo
       map.addLayer({
         id: 'pollution-fade-3',
         type: 'circle',
         source: 'pollution',
         paint: {
           'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
+            'interpolate', ['linear'], ['zoom'],
             10, 300,
             18, 700
           ],
-          'circle-color': ['get', 'color'],
+          'circle-color':   ['get', 'color'],
           'circle-opacity': 0.04,
-          'circle-blur': 1
+          'circle-blur':    1
         }
       });
 
-      // Layer 2: Mid fade (20km radius with low-medium opacity)
+      // Mid fade
       map.addLayer({
         id: 'pollution-fade-2',
         type: 'circle',
         source: 'pollution',
         paint: {
           'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
+            'interpolate', ['linear'], ['zoom'],
             10, 200,
             18, 467
           ],
-          'circle-color': ['get', 'color'],
+          'circle-color':   ['get', 'color'],
           'circle-opacity': 0.08,
-          'circle-blur': 1
+          'circle-blur':    1
         }
       });
 
-      // Layer 3: Center glow (1km radius with medium opacity)
+      // Centre glow
       map.addLayer({
         id: 'pollution-circles',
         type: 'circle',
         source: 'pollution',
         paint: {
           'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
+            'interpolate', ['linear'], ['zoom'],
             10, 8,
             18, 20
           ],
-          'circle-color': ['get', 'color'],
+          'circle-color':   ['get', 'color'],
           'circle-opacity': 0.4,
-          'circle-blur': 0.5
+          'circle-blur':    0.5
         }
       });
 
-      pollutionSource = true;
+      // Hover popup
+      map.on('mousemove', 'pollution-circles', (e) => {
+        const props = e.features[0].properties;
+        popup
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.6;">
+              <strong>AQI:</strong> ${props.aqi}<br>
+              <strong>PM2.5:</strong> ${Number(props.pm2_5).toFixed(1)} µg/m³<br>
+              <strong>PM10:</strong>  ${Number(props.pm10).toFixed(1)}  µg/m³<br>
+              <strong>CO:</strong>    ${Number(props.co).toFixed(2)}    ppm<br>
+              <strong>NO₂:</strong>  ${Number(props.no2).toFixed(2)}   ppb<br>
+              <strong>O₃:</strong>   ${Number(props.o3).toFixed(2)}    ppb<br>
+              <strong>SO₂:</strong>  ${Number(props.so2).toFixed(2)}   ppb
+            </div>
+          `)
+          .addTo(map);
+        map.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.on('mouseleave', 'pollution-circles', () => {
+        popup.remove();
+        map.getCanvas().style.cursor = '';
+      });
+
+      pollutionSourceAdded = true;
+    } else {
+      map.getSource('pollution').setData(geojson);
     }
   });
 
-  // Hover events for pollution circles
-  map.on('mousemove', 'pollution-circles', (e) => {
-    const feature = e.features[0];
-    const props = feature.properties;
-    const html = `
-      <div style="font-family: Arial, sans-serif; font-size: 12px;">
-        <strong>AQI:</strong> ${props.aqi}<br>
-        <strong>PM2.5:</strong> ${props.pm2_5} µg/m³<br>
-        <strong>PM10:</strong> ${props.pm10} µg/m³<br>
-        <strong>CO:</strong> ${props.co} ppm<br>
-        <strong>NO₂:</strong> ${props.no2} ppb<br>
-        <strong>O₃:</strong> ${props.o3} ppb<br>
-        <strong>SO₂:</strong> ${props.so2} ppb
-      </div>
-    `;
-    popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
-    map.getCanvas().style.cursor = 'pointer';
-  });
-
-  map.on('mouseleave', 'pollution-circles', () => {
-    popup.remove();
-    map.getCanvas().style.cursor = '';
-  });
-
+  /* ── Layer visibility helper ─────────────────────── */
   function togglePollutionLayers(map, visible) {
-    const layers = ['pollution-fade-3', 'pollution-fade-2', 'pollution-circles'];
-    layers.forEach(layerId => {
-      if (map.getLayer(layerId)) {
-        map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+    ['pollution-fade-3', 'pollution-fade-2', 'pollution-circles'].forEach((id) => {
+      if (map.getLayer(id)) {
+        map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
       }
     });
   }

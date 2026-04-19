@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -108,4 +110,11 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+/* Hide Mapbox default UI on landing */
+.landing-map .mapboxgl-ctrl-attrib,
+.landing-map .mapboxgl-ctrl-logo,
+.landing-map .mapboxgl-ctrl-top-right {
+  display: none !important;
 }

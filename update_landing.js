@@ -1,252 +1,19 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import './LandingPage.css';
+const fs = require('fs');
 
-/* ── Camera presets ──────────────────────── */
-const VIJAYAWADA = [80.6480, 16.5062];
+const path = 'c:\\Users\\akula\\Desktop\\PROJECTS\\UrbanEye\\frontend\\src\\components\\LandingPage.jsx';
+let content = fs.readFileSync(path, 'utf8');
 
-const LANDING_VIEW = {
-  center: VIJAYAWADA,
-  zoom: 11,
-  pitch: 82,
-  bearing: -15,
-};
+const splitToken = '      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\r\n          SECTION 1 — CITY STATS TICKER\r\n      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}';
+const splitTokenLF = '      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n          SECTION 1 — CITY STATS TICKER\n      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}';
 
-const CITY_VIEW = {
-  center: VIJAYAWADA,
-  zoom: 12,
-  pitch: 0,
-  bearing: 0,
-};
-
-/* ── Sub-components for new sections ─────── */
-
-function StatCard({ value, label, icon }) {
-  return (
-    <div className="group relative flex flex-col items-center gap-2 px-8 py-7 rounded-2xl border border-blue-100 bg-white/80 backdrop-blur-md hover:border-blue-300 transition-all duration-500 hover:-translate-y-1 shadow-sm hover:shadow-md">
-      <div className="text-3xl mb-1">{icon}</div>
-      <span className="font-mono text-4xl font-bold bg-gradient-to-br from-blue-600 to-blue-500 bg-clip-text text-transparent tracking-tight">
-        {value}
-      </span>
-      <span className="text-slate-500 text-sm font-medium tracking-widest uppercase text-center">
-        {label}
-      </span>
-      <div className="absolute inset-0 rounded-2xl bg-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    </div>
-  );
+let parts = content.split(splitToken);
+if (parts.length === 1) {
+  parts = content.split(splitTokenLF);
 }
 
-function FeatureCard({ title, description, icon, accent }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-sm p-7 hover:border-blue-300 transition-all duration-500 hover:-translate-y-1 shadow-sm hover:shadow-lg">
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 text-2xl mb-5">
-        {icon}
-      </div>
-      <h3 className="text-slate-800 font-bold text-lg mb-2 tracking-tight">{title}</h3>
-      <p className="text-slate-500 text-sm leading-relaxed">{description}</p>
-      <div className="absolute bottom-0 right-0 w-24 h-24 bg-blue-100/40 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-    </div>
-  );
-}
-
-function StepItem({ number, title, description, isLast }) {
-  return (
-    <div className="flex gap-6 group">
-      <div className="flex flex-col items-center">
-        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-mono font-bold text-white text-sm shadow-lg shadow-blue-500/25 group-hover:shadow-blue-500/40 transition-shadow duration-300">
-          {number}
-        </div>
-        {!isLast && (
-          <div className="w-px flex-1 bg-gradient-to-b from-blue-300 to-transparent mt-3" />
-        )}
-      </div>
-      <div className="pb-10">
-        <h3 className="text-slate-800 font-bold text-lg mb-2 mt-2 tracking-tight">{title}</h3>
-        <p className="text-slate-500 text-sm leading-relaxed max-w-sm">{description}</p>
-      </div>
-    </div>
-  );
-}
-
-function ModuleCard({ title, tag, description, metrics, color }) {
-  const colorMap = {
-    cyan:   { border: 'border-sky-200',   tag: 'bg-sky-50 text-sky-600 border-sky-200',      dot: 'bg-sky-500',     bar: 'from-sky-400 to-blue-500'    },
-    amber:  { border: 'border-amber-200', tag: 'bg-amber-50 text-amber-600 border-amber-200',  dot: 'bg-amber-500',   bar: 'from-amber-400 to-orange-500'},
-    emerald:{ border: 'border-emerald-200',tag: 'bg-emerald-50 text-emerald-600 border-emerald-200',dot:'bg-emerald-500',bar:'from-emerald-400 to-teal-500'},
-    violet: { border: 'border-violet-200', tag: 'bg-violet-50 text-violet-600 border-violet-200', dot: 'bg-violet-500', bar: 'from-violet-400 to-purple-500'},
-  };
-  const c = colorMap[color] ?? colorMap.cyan;
-
-  return (
-    <div className={`relative rounded-2xl border ${c.border} bg-white/80 backdrop-blur-sm p-6 hover:shadow-lg transition-all duration-400 group shadow-sm`}>
-      <div className="flex items-start justify-between mb-4">
-        <h3 className="text-slate-800 font-bold text-base tracking-tight">{title}</h3>
-        <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${c.tag} tracking-wider uppercase`}>
-          {tag}
-        </span>
-      </div>
-      <p className="text-slate-500 text-sm mb-5 leading-relaxed">{description}</p>
-      <div className="space-y-3">
-        {metrics.map((m, i) => (
-          <div key={i}>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-500">{m.label}</span>
-              <span className="text-slate-700 font-mono font-medium">{m.value}</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-              <div
-                className={`h-full rounded-full bg-gradient-to-r ${c.bar} transition-all duration-1000`}
-                style={{ width: m.pct }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className={`absolute bottom-4 right-4 flex items-center gap-1.5 text-xs`}>
-        <span className={`inline-block w-1.5 h-1.5 rounded-full ${c.dot} animate-pulse`} />
-        <span className="text-slate-400">Live</span>
-      </div>
-    </div>
-  );
-}
-
-/* ── Main Component ───────────────────────── */
-export default function LandingPage() {
-  const mapContainer = useRef(null);
-  const map = useRef(null);
-  const rotationFrame = useRef(null);
-  const navigate = useNavigate();
-  const [fading, setFading] = useState(false);
-
-  const startRotation = useCallback(() => {
-    let bearing = LANDING_VIEW.bearing;
-    const rotate = () => {
-      if (!map.current) return;
-      bearing += 0.015;
-      map.current.setBearing(bearing);
-      rotationFrame.current = requestAnimationFrame(rotate);
-    };
-    rotationFrame.current = requestAnimationFrame(rotate);
-  }, []);
-
-  const stopRotation = useCallback(() => {
-    if (rotationFrame.current) {
-      cancelAnimationFrame(rotationFrame.current);
-      rotationFrame.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (map.current) return;
-
-    mapboxgl.accessToken = import.meta.env.VITE_MAP_BOX_API_KEY;
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: LANDING_VIEW.center,
-      zoom: LANDING_VIEW.zoom,
-      pitch: LANDING_VIEW.pitch,
-      bearing: LANDING_VIEW.bearing,
-      interactive: false,
-      attributionControl: false,
-      antialias: true,
-    });
-
-    map.current.on('style.load', () => {
-      map.current.addSource('mapbox-dem', {
-        type: 'raster-dem',
-        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
-        tileSize: 512,
-        maxzoom: 14,
-      });
-      map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
-      startRotation();
-    });
-
-    return () => {
-      stopRotation();
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    };
-  }, [startRotation, stopRotation]);
-
-  const handleGoToCity = () => {
-  if (!map.current || fading) return;
-
-  setFading(true);
-  stopRotation();
-
-  // 1. Start the flyTo movement FIRST
-  map.current.flyTo({
-    center: CITY_VIEW.center,
-    zoom: CITY_VIEW.zoom,
-    pitch: CITY_VIEW.pitch,
-    bearing: CITY_VIEW.bearing,
-    duration: 3500, // Explicit duration feels more controlled than 'speed'
-    easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t, // Smoother Quadratic easing
-    essential: true,
-  });
-
-  // 2. Gradually clean up the 3D environment mid-flight 
-  // This prevents the "flash" of the terrain disappearing
-  setTimeout(() => {
-    if (map.current) {
-      map.current.setTerrain(null);
-    }
-  }, 1200); // Wait until the camera is high enough that terrain isn't obvious
-
-  // 3. Navigate only after the movement is fully settled
-  map.current.once('moveend', () => {
-    // Add a tiny buffer before navigating for a clean exit
-    setTimeout(() => navigate('/map'), 200);
-  });
-};
-
-  const handleRegister = () => navigate('/register');
-
-  /* ── Render ────────────────────────────── */
-  return (
-    <div className="bg-slate-50 text-slate-800 font-sans">
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-          HERO (unchanged, uses LandingPage.css)
-      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-      <section className="landing-wrapper">
-        <div ref={mapContainer} className="landing-map" />
-        <div className="landing-vignette" />
-        <div className={`landing-overlay ${fading ? 'fade-out' : ''}`}>
-          <div className="landing-content">
-            <p className="landing-subtitle">Smart City Dashboard</p>
-            <h1 className="landing-title">URBAN EYE</h1>
-            <div className="landing-buttons">
-              <button
-                id="btn-go-to-city"
-                className="landing-btn landing-btn--city"
-                onClick={handleGoToCity}
-              >
-                Go to City
-                <span className="landing-btn-icon">→</span>
-              </button>
-              <button
-                id="btn-register-event"
-                className="landing-btn landing-btn--register"
-                onClick={handleRegister}
-              >
-                <span className="landing-btn-icon">📌</span>
-                Register Event
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+if (parts.length > 1) {
+  const before = parts[0];
+  const newContent = `      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           SECTION 1 — WHAT WE MONITOR
       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <section className="relative py-20 px-6 overflow-hidden">
@@ -490,4 +257,10 @@ export default function LandingPage() {
       </footer>
     </div>
   );
+}
+`;
+  fs.writeFileSync(path, before + newContent);
+  console.log('Successfully updated LandingPage.jsx');
+} else {
+  console.log('Could not find split token');
 }

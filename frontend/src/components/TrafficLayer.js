@@ -11,6 +11,15 @@ export function addTrafficLayer(map) {
     url: 'mapbox://mapbox.mapbox-traffic-v1'
   });
 
+  /* ── Sidebar toggle listener ───────────────────────── */
+  window.addEventListener('citymap:toggle', (e) => {
+    if (e.detail.layer !== 'traffic') return;
+    const vis = e.detail.visible ? 'visible' : 'none';
+    ['traffic-low','traffic-moderate','traffic-heavy','traffic-severe','traffic-closed'].forEach((id) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
+    });
+  });
+
   const trafficLayers = [
     { id: 'traffic-low', filter: ['==', 'congestion', 'low'], color: '#00ff00' },
     { id: 'traffic-moderate', filter: ['==', 'congestion', 'moderate'], color: '#ffff00' },

@@ -26,6 +26,9 @@ async function fetchWeatherGrid(lat, lon) {
       );
       const data = await res.json();
 
+      console.log(`Fetched weather for (${gLat.toFixed(4)}, ${gLon.toFixed(4)})`);
+      console.log(`  Condition: ${data.weather?.[0]?.main || "Unknown"}, Temp: ${data.main?.temp || 0}°C`);
+
       return {
         lat: gLat,
         lon: gLon,

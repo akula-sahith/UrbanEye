@@ -48,7 +48,7 @@ export default function Register() {
     };
 
     try {
-      const res = await fetch("http://13.53.182.223/api/events/register", {
+      const res = await fetch("https://urbaneye-jepe.onrender.com/api/events/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -72,25 +72,25 @@ export default function Register() {
   const isStep2Valid = form.location_name && form.start_at && form.end_at;
 
   return (
-    <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center px-4 py-12 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/40 flex items-center justify-center px-4 py-12 font-sans">
 
       {/* Ambient glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-400/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-400/10 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-2xl">
 
         {/* Header */}
         <div className="mb-8 text-center">
-          <span className="inline-block text-xs tracking-[0.3em] uppercase text-cyan-400 font-semibold mb-3">
+          <span className="inline-block text-xs tracking-[0.3em] uppercase text-blue-600 font-semibold mb-3">
             UrbanEye
           </span>
-          <h1 className="text-4xl font-bold text-white tracking-tight">
+          <h1 className="text-4xl font-bold text-slate-800 tracking-tight">
             Register an Event
           </h1>
-          <p className="mt-2 text-slate-400 text-sm">
+          <p className="mt-2 text-slate-500 text-sm">
             Submit a city event for review and discovery
           </p>
         </div>
@@ -103,24 +103,24 @@ export default function Register() {
                 onClick={() => s === 2 && isStep1Valid ? setStep(s) : s === 1 && setStep(s)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shrink-0
                   ${step === s
-                    ? "bg-cyan-400 text-[#0b0f1a] shadow-lg shadow-cyan-400/30"
+                    ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
                     : step > s
-                    ? "bg-cyan-900 text-cyan-400 border border-cyan-500"
-                    : "bg-slate-800 text-slate-500 border border-slate-700"
+                    ? "bg-blue-100 text-blue-600 border border-blue-300"
+                    : "bg-slate-100 text-slate-400 border border-slate-200"
                   }`}
               >
                 {step > s ? "✓" : s}
               </button>
-              <span className={`text-sm font-medium ${step === s ? "text-white" : "text-slate-500"}`}>
+              <span className={`text-sm font-medium ${step === s ? "text-slate-800" : "text-slate-400"}`}>
                 {s === 1 ? "Event Details" : "Location & Time"}
               </span>
-              {s < 2 && <div className={`flex-1 h-px ${step > 1 ? "bg-cyan-800" : "bg-slate-800"}`} />}
+              {s < 2 && <div className={`flex-1 h-px ${step > 1 ? "bg-blue-200" : "bg-slate-200"}`} />}
             </div>
           ))}
         </div>
 
         {/* Card */}
-        <div className="bg-[#111827] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-xl shadow-slate-200/50 overflow-hidden">
 
           <form onSubmit={handleSubmit}>
 
@@ -148,7 +148,7 @@ export default function Register() {
                     <select
                       name="category" value={form.category}
                       onChange={handleChange} required
-                      className="w-full bg-[#1e293b] border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition appearance-none cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none cursor-pointer"
                     >
                       <option value="">Select category</option>
                       {categories.map((c) => (
@@ -161,7 +161,7 @@ export default function Register() {
                     <select
                       name="status" value={form.status}
                       onChange={handleChange}
-                      className="w-full bg-[#1e293b] border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition appearance-none cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition appearance-none cursor-pointer"
                     >
                       {statusOptions.map((s) => (
                         <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
@@ -175,7 +175,7 @@ export default function Register() {
                     name="description" value={form.description}
                     onChange={handleChange} rows={3}
                     placeholder="Briefly describe the event..."
-                    className="w-full bg-[#1e293b] border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition resize-none placeholder-slate-500"
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none placeholder-slate-400"
                   />
                 </Field>
 
@@ -184,7 +184,7 @@ export default function Register() {
                   disabled={!isStep1Valid}
                   onClick={() => setStep(2)}
                   className="w-full mt-2 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-200
-                    bg-cyan-400 text-[#0b0f1a] hover:bg-cyan-300 shadow-lg shadow-cyan-500/20
+                    bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20
                     disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                 >
                   Continue → Location & Time
@@ -223,7 +223,7 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={() => setStep(1)}
-                    className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-700 text-slate-300 hover:bg-slate-800 transition"
+                    className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
                   >
                     ← Back
                   </button>
@@ -232,7 +232,7 @@ export default function Register() {
                     type="submit"
                     disabled={loading || !isStep2Valid}
                     className="flex-1 py-3 rounded-xl font-semibold text-sm tracking-wide transition-all duration-200
-                      bg-cyan-400 text-[#0b0f1a] hover:bg-cyan-300 shadow-lg shadow-cyan-500/20
+                      bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20
                       disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none
                       flex items-center justify-center gap-2"
                   >
@@ -258,8 +258,8 @@ export default function Register() {
         {toast && (
           <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl text-sm font-medium transition-all duration-300
             ${toast.type === "success"
-              ? "bg-emerald-900 border border-emerald-600 text-emerald-300"
-              : "bg-red-900 border border-red-600 text-red-300"
+              ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+              : "bg-red-50 border border-red-200 text-red-700"
             }`}>
             <span>{toast.type === "success" ? "✅" : "❌"}</span>
             {toast.msg}
@@ -274,8 +274,8 @@ export default function Register() {
 function Field({ label, required, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-slate-400 tracking-wide uppercase">
-        {label} {required && <span className="text-cyan-500">*</span>}
+      <label className="text-xs font-semibold text-slate-500 tracking-wide uppercase">
+        {label} {required && <span className="text-blue-500">*</span>}
       </label>
       {children}
     </div>
@@ -287,10 +287,9 @@ function Input({ className = "", ...props }) {
   return (
     <input
       {...props}
-      className={`w-full bg-[#1e293b] border border-slate-700 text-white rounded-xl px-4 py-3 text-sm
-        focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent
-        transition placeholder-slate-500
-        [color-scheme:dark]
+      className={`w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 text-sm
+        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+        transition placeholder-slate-400
         ${className}`}
     />
   );
